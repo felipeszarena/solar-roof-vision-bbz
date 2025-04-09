@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/Badge";
+import { Plus } from "@/components/Plus";
 
 const Settings = () => {
   const { toast } = useToast();

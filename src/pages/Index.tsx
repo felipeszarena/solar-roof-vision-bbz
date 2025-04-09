@@ -1,12 +1,13 @@
 
 import React from "react";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import ProjectCard, { ProjectProps } from "@/components/ProjectCard";
+import StatCard from "@/components/dashboard/StatCard";
+import ProjectsList from "@/components/dashboard/ProjectsList";
+import SolarHeatMap from "@/components/dashboard/SolarHeatMap";
+import { ProjectProps } from "@/components/ProjectCard";
 
 const Dashboard = () => {
   // Dados de exemplo para exibição
@@ -76,77 +77,21 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Overview Cards */}
+        {/* Cards de estatísticas */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <CardDescription>{stat.title}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.change}</p>
-              </CardContent>
-            </Card>
+            <StatCard key={i} title={stat.title} value={stat.value} change={stat.change} />
           ))}
         </div>
 
-        {/* Tabs + Projects */}
-        <Tabs defaultValue="recentes">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="recentes">Projetos recentes</TabsTrigger>
-              <TabsTrigger value="andamento">Em andamento</TabsTrigger>
-              <TabsTrigger value="concluidos">Concluídos</TabsTrigger>
-            </TabsList>
-            <Button variant="ghost" size="sm">
-              Ver todos
-            </Button>
-          </div>
-          <TabsContent value="recentes" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recentProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="andamento">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recentProjects
-                .filter((p) => p.status === "in_progress")
-                .map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="concluidos">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {recentProjects
-                .filter((p) => p.status === "completed")
-                .map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+        {/* Lista de projetos com abas */}
+        <ProjectsList projects={recentProjects} />
 
-        {/* Visualização solar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Potencial Solar por Região</CardTitle>
-            <CardDescription>
-              Média de potencial de geração de energia por localização
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] bg-gray-100 rounded-md flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-muted-foreground">Mapa de calor solar será exibido aqui</p>
-                <p className="text-xs text-muted-foreground mt-2">Integrações com APIs de mapeamento em desenvolvimento</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Visualização do mapa de calor solar */}
+        <SolarHeatMap 
+          title="Potencial Solar por Região" 
+          description="Média de potencial de geração de energia por localização"
+        />
       </div>
     </Layout>
   );

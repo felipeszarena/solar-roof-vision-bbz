@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { toast } from "@/hooks/use-toast";
+import { SolarMapConfig, HeatmapData } from "@/types/map";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface SolarHeatMapProps {
   title: string;
@@ -15,13 +18,20 @@ const SolarHeatMap = ({ title, description }: SolarHeatMapProps) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState<string>("");
   const [showTokenInput, setShowTokenInput] = useState<boolean>(true);
+  const [tokenError, setTokenError] = useState<string>("");
 
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken) return;
 
-    mapboxgl.accessToken = mapboxToken;
-    
+    // Validar o formato do token
+    if (!mapboxToken.startsWith("pk.")) {
+      setTokenError("O token Mapbox deve ser um token público (começando com 'pk.')");
+      return;
+    }
+
     try {
+      mapboxgl.accessToken = mapboxToken;
+      
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/light-v11",
@@ -96,13 +106,12 @@ const SolarHeatMap = ({ title, description }: SolarHeatMapProps) => {
       // Adicionar controles de navegação
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
+      // Limpar erro se tudo funcionar
+      setTokenError("");
+
     } catch (error) {
       console.error("Erro ao inicializar o mapa:", error);
-      toast({
-        title: "Erro ao carregar o mapa",
-        description: "Verifique se o token da API Mapbox é válido",
-        variant: "destructive",
-      });
+      setTokenError("Erro ao inicializar o mapa. Verifique se o token da API Mapbox é válido.");
     }
 
     return () => {
@@ -154,21 +163,30 @@ const SolarHeatMap = ({ title, description }: SolarHeatMapProps) => {
     const formData = new FormData(e.currentTarget);
     const token = formData.get('mapboxToken') as string;
     
-    if (token && token.length > 10) {
-      setMapboxToken(token);
-      setShowTokenInput(false);
-      localStorage.setItem('mapbox_token', token);
-      toast({
-        title: "Token aplicado",
-        description: "Inicializando o mapa de calor solar",
-      });
-    } else {
-      toast({
-        title: "Token inválido",
-        description: "Por favor, insira um token Mapbox válido",
-        variant: "destructive",
-      });
+    if (!token) {
+      setTokenError("Por favor, insira um token Mapbox");
+      return;
     }
+    
+    if (!token.startsWith("pk.")) {
+      setTokenError("O token da API Mapbox deve ser um token público (começando com 'pk.')");
+      return;
+    }
+    
+    setMapboxToken(token);
+    setShowTokenInput(false);
+    localStorage.setItem('mapbox_token', token);
+    toast({
+      title: "Token aplicado",
+      description: "Inicializando o mapa de calor solar",
+    });
+  };
+
+  const resetToken = () => {
+    localStorage.removeItem('mapbox_token');
+    setMapboxToken("");
+    setShowTokenInput(true);
+    setTokenError("");
   };
 
   // Tentar recuperar token do localStorage
@@ -187,19 +205,30 @@ const SolarHeatMap = ({ title, description }: SolarHeatMapProps) => {
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
+        {tokenError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{tokenError}</AlertDescription>
+          </Alert>
+        )}
+        
         {showTokenInput ? (
           <div className="p-4 flex flex-col gap-4">
             <div className="text-sm">
-              <p>Para visualizar o mapa de calor solar, você precisa fornecer um token de API do Mapbox.</p>
+              <p>Para visualizar o mapa de calor solar, você precisa fornecer um token público de API do Mapbox.</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Você pode obter um token gratuito em <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">mapbox.com</a>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <strong>Importante:</strong> Use apenas tokens públicos (começam com "pk."), não tokens secretos (começam com "sk.").
               </p>
             </div>
             <form onSubmit={handleTokenSubmit} className="flex flex-col gap-2">
               <input 
                 type="text" 
                 name="mapboxToken" 
-                placeholder="Cole seu token Mapbox aqui" 
+                placeholder="Cole seu token público Mapbox aqui (pk.*)" 
                 className="border p-2 rounded-md"
                 required
               />
@@ -212,11 +241,21 @@ const SolarHeatMap = ({ title, description }: SolarHeatMapProps) => {
             </form>
           </div>
         ) : (
-          <div 
-            ref={mapContainer} 
-            className="h-[300px] w-full rounded-md border border-border/50 bg-background"
-            style={{ minHeight: "300px" }}
-          />
+          <div className="space-y-4">
+            <div 
+              ref={mapContainer} 
+              className="h-[300px] w-full rounded-md border border-border/50 bg-background"
+              style={{ minHeight: "300px" }}
+            />
+            <div className="flex justify-end">
+              <button 
+                onClick={resetToken}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Alterar token do Mapbox
+              </button>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

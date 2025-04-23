@@ -1,5 +1,6 @@
-
 import React from "react";
+import { pdf } from '@react-pdf/renderer';
+import { FilePdf } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, FileText, Download, Eye, Mail } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import ProposalPDF from "@/components/ProposalPDF";
 
 const proposalsData = [
   {
@@ -93,11 +95,34 @@ const ProposalCard = ({ proposal }: { proposal: typeof proposalsData[0] }) => {
     });
   };
   
-  const handleDownload = () => {
-    toast({
-      title: "Download iniciado",
-      description: "O download da proposta começou",
-    });
+  const handleDownload = async () => {
+    try {
+      toast({
+        title: "Gerando PDF",
+        description: "Aguarde enquanto geramos o documento...",
+      });
+
+      const blob = await pdf(<ProposalPDF proposal={proposal} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `proposta-${proposal.projectName.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download concluído",
+        description: "O PDF da proposta foi gerado com sucesso!",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Ocorreu um erro ao gerar o documento. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleSend = () => {
@@ -152,7 +177,7 @@ const ProposalCard = ({ proposal }: { proposal: typeof proposalsData[0] }) => {
           <Eye className="mr-1 h-4 w-4" /> Ver
         </Button>
         <Button variant="outline" size="sm" onClick={handleDownload}>
-          <Download className="mr-1 h-4 w-4" /> PDF
+          <FilePdf className="mr-1 h-4 w-4" /> PDF
         </Button>
         <Button size="sm" onClick={handleSend} disabled={proposal.status === "draft" || proposal.status === "expired"}>
           <Mail className="mr-1 h-4 w-4" /> Enviar
